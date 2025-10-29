@@ -24,13 +24,12 @@ app.get('/', (req, res) => {
 });
 
 // Configura as rotas principais da API, delegando para os respectivos módulos
-app.use('/auth', require('./routes/auth')); // Rotas de autenticação (ex.: login)
-app.use('/usuarios', require('./routes/usuarios')); // Rotas para gerenciamento de usuários
-app.use('/profissionais', require('./routes/profissionais')); // Rotas para gerenciamento de profissionais
-app.use('/agendamentos', require('./routes/agendamentos')); // Rotas para gerenciamento de agendamentos
-
-app.use('/acompanhamentos', require('./routes/acompanhamentos'));
-app.use('/avaliacoes', require('./routes/avaliacoes')); // Rotas para gerenciamento de avaliações
+// Rotas novas do sistema
+app.use('/pacientes', require('./routes/pacientes'));
+app.use('/psicologos', require('./routes/psicologos'));
+app.use('/admin', require('./routes/admin'));
+app.use('/solicitacoes', require('./routes/solicitacoes'));
+app.use('/atendimentos', require('./routes/atendimentos'));
 
 // Define a porta do servidor, usando a variável de ambiente PORT ou 3333 como padrão
 const PORT = process.env.PORT || 3333;
@@ -40,9 +39,5 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
-// Importa o objeto de conexão com o banco de dados MySQL (parece não ser usado diretamente aqui)
-// TODO: Verificar se esta linha é necessária ou se deve ser movida para outro arquivo
-const db = require('./config/db');
-// Importa o router do módulo de autenticação (parece não ser usado diretamente aqui)
-// TODO: Verificar se esta linha é necessária ou se é um erro de formatação
-const { router } = require('./routes/auth');
+// Conexão é estabelecida ao importar config/db
+require('./config/db');
