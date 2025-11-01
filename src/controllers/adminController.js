@@ -69,3 +69,10 @@ exports.removePaciente = (req, res) => {
 
 
 
+
+
+
+
+
+
+

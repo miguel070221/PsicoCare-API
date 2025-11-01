@@ -65,7 +65,51 @@ CREATE TABLE IF NOT EXISTS atendimentos (
 );
 
 -- Índices auxiliares
+-- Nota: Se o índice já existir, use DROP INDEX antes ou ignore o erro
 CREATE INDEX idx_psicologos_disponiveis ON psicologos (disponivel, perfil_completo, aprovado);
+
+-- Tabela de agendamentos (caso ainda não exista)
+CREATE TABLE IF NOT EXISTS agendamentos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  profissional_id INT NOT NULL,
+  data_hora DATETIME NOT NULL,
+  status VARCHAR(20) DEFAULT 'agendado',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_agend_usuario FOREIGN KEY (usuario_id) REFERENCES pacientes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_agend_prof FOREIGN KEY (profissional_id) REFERENCES psicologos(id) ON DELETE CASCADE
+);
+
+-- Tabela de acompanhamentos (autoavaliações do paciente)
+CREATE TABLE IF NOT EXISTS acompanhamentos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_usuario INT NOT NULL,
+  texto TEXT,
+  qualidade_sono TINYINT,
+  humor VARCHAR(120),
+  data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_acomp_usuario FOREIGN KEY (id_usuario) REFERENCES pacientes(id) ON DELETE CASCADE
+);
+
+-- Tabela de notas/sessões (anotações do psicólogo sobre sessões)
+CREATE TABLE IF NOT EXISTS notas_sessoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_psicologo INT NOT NULL,
+  id_paciente INT NOT NULL,
+  id_agendamento INT,
+  titulo VARCHAR(255),
+  conteudo TEXT NOT NULL,
+  data_sessao DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_nota_psicologo FOREIGN KEY (id_psicologo) REFERENCES psicologos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_nota_paciente FOREIGN KEY (id_paciente) REFERENCES pacientes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_nota_agendamento FOREIGN KEY (id_agendamento) REFERENCES agendamentos(id) ON DELETE SET NULL
+);
+
+
+
+
 
 
 

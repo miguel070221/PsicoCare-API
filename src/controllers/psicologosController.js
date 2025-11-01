@@ -32,6 +32,25 @@ exports.login = (req, res) => {
   });
 };
 
+exports.me = (req, res) => {
+  psicologos.findById(req.usuario.id, (err, rows) => {
+    if (err) return res.status(500).json({ erro: err.message });
+    if (!rows || rows.length === 0) return res.status(404).json({ erro: 'Não encontrado' });
+    const r = rows[0];
+    res.json({
+      id: r.id,
+      nome: r.nome,
+      email: r.email,
+      crp: r.crp,
+      especializacoes: JSON.parse(r.especializacoes || '[]'),
+      bio: r.bio,
+      foto_perfil: r.foto_perfil,
+      disponivel: !!r.disponivel,
+      perfil_completo: !!r.perfil_completo,
+    });
+  });
+};
+
 exports.update = (req, res) => {
   psicologos.update(req.usuario.id, req.body, (err) => {
     if (err) return res.status(500).json({ erro: err.message });
@@ -50,10 +69,41 @@ exports.toggleDisponibilidade = (req, res) => {
 };
 
 exports.listPublic = (req, res) => {
-  const { especializacao, faixa } = req.query;
-  psicologos.listPublic({ especializacao, faixa }, (err, rows) => {
-    if (err) return res.status(500).json({ erro: err.message });
-    const mapped = rows.map(r => ({ ...r, especializacoes: JSON.parse(r.especializacoes || '[]') }));
+  const { especializacao, faixa, pacienteId } = req.query;
+  
+  // Tenta autenticar opcionalmente para pegar pacienteId do token
+  let pacienteIdFromToken = null;
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded?.role === 'paciente' && decoded?.id) {
+        pacienteIdFromToken = decoded.id;
+      }
+    }
+  } catch (e) {
+    // Token inválido ou ausente, ignora e continua sem autenticação
+  }
+  
+  // Prioriza pacienteId do query param, senão usa do token
+  const pacienteIdFinal = pacienteId ? parseInt(pacienteId) : pacienteIdFromToken;
+  
+  psicologos.listPublic({ especializacao, faixa, pacienteId: pacienteIdFinal }, (err, rows) => {
+    if (err) {
+      console.error('Erro ao listar psicólogos públicos:', err);
+      return res.status(500).json({ erro: err.message });
+    }
+    const mapped = rows.map(r => ({
+      ...r,
+      // Garante nome exibível mesmo que registro legado esteja vazio
+      nome: r.nome && String(r.nome).trim().length > 0
+        ? r.nome
+        : (r.nome_completo || r.nomeCompleto || (r.email ? String(r.email).split('@')[0] : `Psicólogo #${r.id}`)),
+      especializacoes: JSON.parse(r.especializacoes || '[]'),
+      vinculado: !!r.vinculado,
+    }));
+    console.log(`Retornando ${mapped.length} psicólogos (pacienteId: ${pacienteIdFinal})`);
     res.json(mapped);
   });
 };

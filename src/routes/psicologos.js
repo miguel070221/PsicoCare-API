@@ -7,10 +7,11 @@ const ctrl = require('../controllers/psicologosController');
 router.post('/register', ctrl.register);
 router.post('/login', ctrl.login);
 
-// público para pacientes
+// público para pacientes (auth opcional para incluir psicólogos vinculados)
 router.get('/public', ctrl.listPublic);
 
 // psicólogo autenticado
+router.get('/me', auth, authorize(['psicologo']), ctrl.me);
 router.put('/me', auth, authorize(['psicologo']), ctrl.update);
 router.post('/toggle-disponibilidade', auth, authorize(['psicologo']), ctrl.toggleDisponibilidade);
 router.get('/solicitacoes/pendentes', auth, authorize(['psicologo']), ctrl.getSolicitacoesPendentes);
@@ -21,6 +22,10 @@ router.post('/solicitacoes/recusar', auth, authorize(['psicologo']), ctrl.recusa
 router.get('/', auth, authorize(['admin']), ctrl.list);
 
 module.exports = router;
+
+
+
+
 
 
 

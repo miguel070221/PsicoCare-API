@@ -32,3 +32,10 @@ exports.listByPaciente = (id_paciente, cb) => {
 
 
 
+
+
+
+
+
+
+
