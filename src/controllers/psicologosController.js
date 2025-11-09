@@ -69,7 +69,7 @@ exports.toggleDisponibilidade = (req, res) => {
 };
 
 exports.listPublic = (req, res) => {
-  const { especializacao, faixa, pacienteId } = req.query;
+  const { especializacao, faixa, pacienteId, apenasVinculados } = req.query;
   
   // Tenta autenticar opcionalmente para pegar pacienteId do token
   let pacienteIdFromToken = null;
@@ -88,8 +88,15 @@ exports.listPublic = (req, res) => {
   
   // Prioriza pacienteId do query param, senão usa do token
   const pacienteIdFinal = pacienteId ? parseInt(pacienteId) : pacienteIdFromToken;
+  const apenasVinculadosFinal = apenasVinculados === 'true' || apenasVinculados === true;
   
-  psicologos.listPublic({ especializacao, faixa, pacienteId: pacienteIdFinal }, (err, rows) => {
+  console.log('=== LISTAR PSICÓLOGOS PÚBLICOS ===');
+  console.log('Query params:', { especializacao, faixa, pacienteId, apenasVinculados });
+  console.log('pacienteIdFinal:', pacienteIdFinal);
+  console.log('apenasVinculadosFinal:', apenasVinculadosFinal);
+  console.log('Token presente:', !!req.headers.authorization);
+  
+  psicologos.listPublic({ especializacao, faixa, pacienteId: pacienteIdFinal, apenasVinculados: apenasVinculadosFinal }, (err, rows) => {
     if (err) {
       console.error('Erro ao listar psicólogos públicos:', err);
       return res.status(500).json({ erro: err.message });
@@ -103,7 +110,8 @@ exports.listPublic = (req, res) => {
       especializacoes: JSON.parse(r.especializacoes || '[]'),
       vinculado: !!r.vinculado,
     }));
-    console.log(`Retornando ${mapped.length} psicólogos (pacienteId: ${pacienteIdFinal})`);
+    console.log(`Retornando ${mapped.length} psicólogos (pacienteId: ${pacienteIdFinal}, apenasVinculados: ${apenasVinculadosFinal})`);
+    console.log('Psicólogos mapeados:', mapped.map(p => ({ id: p.id, nome: p.nome, vinculado: p.vinculado })));
     res.json(mapped);
   });
 };
@@ -142,6 +150,49 @@ exports.recusarSolicitacao = (req, res) => {
   solicitacoes.updateStatus(solicitacaoId, 'recusada', (err) => {
     if (err) return res.status(500).json({ erro: err.message });
     res.json({ ok: true });
+  });
+};
+
+// Buscar psicólogos vinculados diretamente pelos atendimentos do paciente
+exports.listVinculadosPorAtendimentos = (req, res) => {
+  // O middleware auth já fornece req.usuario com id e role
+  const pacienteIdFinal = req.usuario?.id;
+  
+  console.log('=== LISTAR PSICÓLOGOS VINCULADOS POR ATENDIMENTOS ===');
+  console.log('req.usuario:', JSON.stringify(req.usuario, null, 2));
+  console.log('pacienteIdFinal:', pacienteIdFinal);
+  console.log('Token presente:', !!req.headers.authorization);
+  
+  if (!pacienteIdFinal) {
+    console.error('Erro: pacienteId não encontrado no token');
+    return res.status(400).json({ erro: 'pacienteId é obrigatório. Verifique se está autenticado como paciente.' });
+  }
+  
+  if (req.usuario?.role !== 'paciente') {
+    console.error('Erro: usuário não é paciente, role:', req.usuario?.role);
+    return res.status(403).json({ erro: 'Acesso permitido apenas para pacientes.' });
+  }
+  
+  psicologos.listByAtendimentos(pacienteIdFinal, (err, rows) => {
+    if (err) {
+      console.error('Erro ao buscar psicólogos vinculados:', err);
+      return res.status(500).json({ erro: err.message });
+    }
+    console.log(`Query retornou ${rows?.length || 0} psicólogos`);
+    
+    const mapped = rows.map(r => ({
+      ...r,
+      nome: r.nome && String(r.nome).trim().length > 0
+        ? r.nome
+        : (r.nome_completo || r.nomeCompleto || (r.email ? String(r.email).split('@')[0] : `Psicólogo #${r.id}`)),
+      especializacoes: JSON.parse(r.especializacoes || '[]'),
+      vinculado: true, // Sempre true pois vem de atendimentos
+    }));
+    console.log(`Retornando ${mapped.length} psicólogos vinculados`);
+    if (mapped.length > 0) {
+      console.log('Psicólogos:', mapped.map(p => ({ id: p.id, nome: p.nome })));
+    }
+    res.json(mapped);
   });
 };
 

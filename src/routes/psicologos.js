@@ -9,6 +9,8 @@ router.post('/login', ctrl.login);
 
 // público para pacientes (auth opcional para incluir psicólogos vinculados)
 router.get('/public', ctrl.listPublic);
+// Buscar psicólogos vinculados diretamente pelos atendimentos
+router.get('/vinculados', auth, authorize(['paciente']), ctrl.listVinculadosPorAtendimentos);
 
 // psicólogo autenticado
 router.get('/me', auth, authorize(['psicologo']), ctrl.me);

@@ -119,33 +119,46 @@ exports.criar = (req, res) => {
 
     if (role === 'psicologo') {
       const profissionalIdFinal = profissional_id || usuarioTokenId;
+      console.log('Psicólogo agendando:', { profissionalIdFinal, paciente_id, usuarioTokenId, role });
+      
       if (!profissionalIdFinal || !paciente_id) {
         return res.status(400).json({ erro: 'paciente_id é obrigatório para o psicólogo agendar.' });
       }
 
       // Verifica vínculo (atendimento) entre psicólogo e paciente
-      const sqlCheck = 'SELECT id FROM atendimentos WHERE id_psicologo = ? AND id_paciente = ? LIMIT 1';
+      const sqlCheck = 'SELECT id FROM atendimentos WHERE id_psicologo = ? AND id_paciente = ? AND status = "ativo" LIMIT 1';
       db.query(sqlCheck, [profissionalIdFinal, paciente_id], (err, rows) => {
-        if (err) return res.status(500).json({ erro: err.message });
+        if (err) {
+          console.error('Erro ao verificar vínculo:', err);
+          return res.status(500).json({ erro: err.message });
+        }
+        console.log('Vínculo verificado:', { rows: rows?.length, profissionalIdFinal, paciente_id });
         if (!rows || rows.length === 0) {
-          return res.status(403).json({ erro: 'Paciente não vinculado a este psicólogo.' });
+          return res.status(403).json({ erro: 'Paciente não vinculado a este psicólogo ou atendimento inativo.' });
         }
         
         if (isOldStructure) {
           // Estrutura antiga: id_usuario, id_profissional, data, horario
+          console.log('Inserindo agendamento (estrutura antiga):', { paciente_id, profissionalIdFinal, dataDate, horarioTime });
           const sql = 'INSERT INTO agendamentos (id_usuario, id_profissional, data, horario, status) VALUES (?, ?, ?, ?, ?)';
           db.query(sql, [paciente_id, profissionalIdFinal, dataDate, horarioTime, 'Agendado'], (err2, result) => {
             if (err2) {
               console.error('Erro ao inserir agendamento (estrutura antiga):', err2);
               return res.status(500).json({ erro: err2.message });
             }
+            console.log('Agendamento criado com sucesso (estrutura antiga):', result.insertId);
             res.status(201).json({ id: result.insertId, id_usuario: paciente_id, id_profissional: profissionalIdFinal, data: dataDate, horario: horarioTime, status: 'Agendado' });
           });
         } else {
           // Estrutura nova
+          console.log('Inserindo agendamento (estrutura nova):', { paciente_id, profissionalIdFinal, dataHoraFinal });
           const sql = 'INSERT INTO agendamentos (usuario_id, profissional_id, data_hora, status) VALUES (?, ?, ?, ?)';
           db.query(sql, [paciente_id, profissionalIdFinal, dataHoraFinal, 'agendado'], (err2, result) => {
-            if (err2) return res.status(500).json({ erro: err2.message });
+            if (err2) {
+              console.error('Erro ao inserir agendamento (estrutura nova):', err2);
+              return res.status(500).json({ erro: err2.message });
+            }
+            console.log('Agendamento criado com sucesso (estrutura nova):', result.insertId);
             res.status(201).json({ id: result.insertId, usuario_id: paciente_id, profissional_id: profissionalIdFinal, data_hora: dataHoraFinal, status: 'agendado' });
           });
         }
@@ -154,4 +167,61 @@ exports.criar = (req, res) => {
   });
 
   return res.status(403).json({ erro: 'Role não autorizado a criar agendamentos.' });
+};
+
+// Cancelar agendamento
+exports.cancelar = (req, res) => {
+  const usuarioTokenId = req.usuario?.id;
+  const role = req.usuario?.role;
+  const agendamentoId = req.params.id;
+
+  if (!agendamentoId) {
+    return res.status(400).json({ erro: 'ID do agendamento é obrigatório.' });
+  }
+
+  // Verificar se o agendamento existe e se o usuário tem permissão para cancelá-lo
+  let sqlCheck = `
+    SELECT a.id,
+           COALESCE(a.usuario_id, a.id_usuario) AS usuario_id,
+           COALESCE(a.profissional_id, a.id_profissional) AS profissional_id,
+           a.status
+    FROM agendamentos a
+    WHERE a.id = ?
+  `;
+
+  db.query(sqlCheck, [agendamentoId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ erro: err.message });
+    }
+
+    if (!results || results.length === 0) {
+      return res.status(404).json({ erro: 'Agendamento não encontrado.' });
+    }
+
+    const agendamento = results[0];
+    
+    // Verificar permissão: paciente pode cancelar seus próprios agendamentos
+    // Psicólogo pode cancelar agendamentos onde ele é o profissional
+    const podeCancelar = 
+      (role === 'paciente' && Number(agendamento.usuario_id) === Number(usuarioTokenId)) ||
+      (role === 'psicologo' && Number(agendamento.profissional_id) === Number(usuarioTokenId));
+
+    if (!podeCancelar) {
+      return res.status(403).json({ erro: 'Você não tem permissão para cancelar este agendamento.' });
+    }
+
+    // Verificar se já está cancelado
+    if (agendamento.status === 'cancelado' || agendamento.status === 'Cancelado') {
+      return res.status(400).json({ erro: 'Este agendamento já está cancelado.' });
+    }
+
+    // Atualizar status para cancelado
+    const sqlUpdate = 'UPDATE agendamentos SET status = ? WHERE id = ?';
+    db.query(sqlUpdate, ['cancelado', agendamentoId], (errUpdate, result) => {
+      if (errUpdate) {
+        return res.status(500).json({ erro: errUpdate.message });
+      }
+      res.json({ mensagem: 'Agendamento cancelado com sucesso.', id: agendamentoId });
+    });
+  });
 };

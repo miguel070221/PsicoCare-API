@@ -6,5 +6,7 @@ const auth = require('../middleware/auth');
 router.get('/', auth, agendamentosController.listar);
 // Criar agendamento (autenticado)
 router.post('/', auth, agendamentosController.criar);
+// Cancelar agendamento (autenticado)
+router.put('/:id/cancelar', auth, agendamentosController.cancelar);
 
 module.exports = router;

@@ -25,3 +25,8 @@ exports.remove = (id, cb) => db.query('DELETE FROM administradores WHERE id = ?'
 
 
 
+
+
+
+
+

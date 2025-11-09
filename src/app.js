@@ -31,6 +31,9 @@ app.use('/admin', require('./routes/admin'));
 app.use('/solicitacoes', require('./routes/solicitacoes'));
 app.use('/atendimentos', require('./routes/atendimentos'));
 app.use('/acompanhamentos', require('./routes/acompanhamentos'));
+app.use('/horarios-disponiveis', require('./routes/horariosDisponiveis'));
+app.use('/agendamentos', require('./routes/agendamentos'));
+app.use('/notas-sessoes', require('./routes/notasSessoes'));
 
 // Define a porta do servidor, usando a variável de ambiente PORT ou 3333 como padrão
 const PORT = process.env.PORT || 3333;
