@@ -3,10 +3,25 @@ const Acompanhamento = require('../models/acompanhamentoModel');
 
 exports.criarAcompanhamento = (req, res) => {
   const { texto, qualidade_sono, humor, data_hora } = req.body;
-  const id_usuario = req.usuario?.id || req.body.id_usuario;
+  // SEMPRE usar o ID do token, nunca confiar no body
+  const id_usuario = req.usuario?.id;
+  const role = req.usuario?.role;
+  
+  console.log('📝 [ACOMPANHAMENTO] criarAcompanhamento chamado');
+  console.log('📝 [ACOMPANHAMENTO] id_usuario:', id_usuario);
+  console.log('📝 [ACOMPANHAMENTO] role:', role);
+  
   if (!id_usuario) {
-    return res.status(400).json({ error: 'Usuário não autenticado.' });
+    console.error('❌ [ACOMPANHAMENTO] Usuário não autenticado');
+    return res.status(401).json({ error: 'Usuário não autenticado.' });
   }
+  
+  // Apenas pacientes podem criar acompanhamentos
+  if (role !== 'paciente') {
+    console.error('❌ [ACOMPANHAMENTO] Apenas pacientes podem criar acompanhamentos');
+    return res.status(403).json({ error: 'Apenas pacientes podem criar acompanhamentos.' });
+  }
+  
   // Pelo menos um dos campos deve estar preenchido
   if (
     (texto === undefined || texto === '') &&
@@ -15,6 +30,7 @@ exports.criarAcompanhamento = (req, res) => {
   ) {
     return res.status(400).json({ error: 'Inclua algum conteúdo (texto, sono ou humor).' });
   }
+  
   const registro = {
     id_usuario,
     texto: texto ?? null,
@@ -22,18 +38,44 @@ exports.criarAcompanhamento = (req, res) => {
     humor: humor ?? null,
     data_hora: data_hora || new Date(),
   };
+  
   Acompanhamento.create(registro, (err, result) => {
-    if (err) return res.status(500).json({ error: 'Erro ao salvar acompanhamento.' });
+    if (err) {
+      console.error('❌ [ACOMPANHAMENTO] Erro ao salvar:', err);
+      return res.status(500).json({ error: 'Erro ao salvar acompanhamento.' });
+    }
+    console.log('✅ [ACOMPANHAMENTO] Acompanhamento criado com sucesso:', result.insertId);
     res.status(201).json({ success: true, id: result.insertId });
   });
 };
 
 exports.listarAcompanhamentos = (req, res) => {
-  const id_usuario = req.usuario?.id || req.params.id_usuario;
-  if (!id_usuario) return res.status(400).json({ error: 'Usuário não informado.' });
+  // SEMPRE usar o ID do token, nunca confiar em parâmetros
+  const id_usuario = req.usuario?.id;
+  const role = req.usuario?.role;
+  
+  console.log('📋 [ACOMPANHAMENTO] listarAcompanhamentos chamado');
+  console.log('📋 [ACOMPANHAMENTO] id_usuario:', id_usuario);
+  console.log('📋 [ACOMPANHAMENTO] role:', role);
+  
+  if (!id_usuario) {
+    console.error('❌ [ACOMPANHAMENTO] Usuário não autenticado');
+    return res.status(401).json({ error: 'Usuário não autenticado.' });
+  }
+  
+  // Apenas pacientes podem ver seus próprios acompanhamentos
+  if (role !== 'paciente') {
+    console.error('❌ [ACOMPANHAMENTO] Apenas pacientes podem ver seus acompanhamentos');
+    return res.status(403).json({ error: 'Apenas pacientes podem ver seus acompanhamentos.' });
+  }
+  
   Acompanhamento.getByUsuario(id_usuario, (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Erro ao buscar acompanhamentos.' });
-    res.json(rows);
+    if (err) {
+      console.error('❌ [ACOMPANHAMENTO] Erro ao buscar:', err);
+      return res.status(500).json({ error: 'Erro ao buscar acompanhamentos.' });
+    }
+    console.log('✅ [ACOMPANHAMENTO] Acompanhamentos encontrados:', rows?.length || 0);
+    res.json(rows || []);
   });
 };
 

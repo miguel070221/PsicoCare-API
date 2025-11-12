@@ -9,7 +9,14 @@ require('dotenv').config();
 const app = express();
 
 // Configura o middleware CORS para permitir acesso ao front-end do PsicoCare
-app.use(cors());
+// Permite requisições de qualquer origem (útil para desenvolvimento)
+// Em produção, você pode restringir para origens específicas
+app.use(cors({
+  origin: '*', // Permite todas as origens (desenvolvimento)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}));
 // Configura o middleware para interpretar corpos de requisições no formato JSON
 app.use(express.json());
 
@@ -34,6 +41,7 @@ app.use('/acompanhamentos', require('./routes/acompanhamentos'));
 app.use('/horarios-disponiveis', require('./routes/horariosDisponiveis'));
 app.use('/agendamentos', require('./routes/agendamentos'));
 app.use('/notas-sessoes', require('./routes/notasSessoes'));
+app.use('/avaliacoes', require('./routes/avaliacoes'));
 
 // Define a porta do servidor, usando a variável de ambiente PORT ou 3333 como padrão
 const PORT = process.env.PORT || 3333;

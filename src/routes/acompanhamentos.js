@@ -5,14 +5,11 @@ const acompanhamentoController = require('../controllers/acompanhamentoControlle
 const auth = require('../middleware/auth');
 const authorize = require('../middleware/authorize');
 
-// Criar acompanhamento (autenticado)
-router.post('/', auth, acompanhamentoController.criarAcompanhamento);
+// Criar acompanhamento (apenas pacientes autenticados)
+router.post('/', auth, authorize(['paciente']), acompanhamentoController.criarAcompanhamento);
 
-// Listar acompanhamentos do usuário autenticado
-router.get('/', auth, acompanhamentoController.listarAcompanhamentos);
-
-// Listar acompanhamentos por id_usuario (admin ou debug)
-router.get('/usuario/:id_usuario', acompanhamentoController.listarAcompanhamentos);
+// Listar acompanhamentos do usuário autenticado (apenas pacientes)
+router.get('/', auth, authorize(['paciente']), acompanhamentoController.listarAcompanhamentos);
 
 // Psicólogo: listar acompanhamentos de um paciente vinculado
 router.get('/paciente/:id', auth, authorize(['psicologo']), acompanhamentoController.listarPorPacienteComAutorizacao);

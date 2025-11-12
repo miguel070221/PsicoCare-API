@@ -39,8 +39,18 @@ exports.me = (req, res) => {
 };
 
 exports.update = (req, res) => {
-  pacientes.update(req.usuario.id, req.body, (err) => {
-    if (err) return res.status(500).json({ erro: err.message });
+  console.log('📝 [PACIENTES] Atualizando perfil do paciente ID:', req.usuario.id);
+  console.log('📝 [PACIENTES] Dados recebidos:', req.body);
+  
+  pacientes.update(req.usuario.id, req.body, (err, result) => {
+    if (err) {
+      console.error('❌ [PACIENTES] Erro ao atualizar paciente:', err);
+      console.error('❌ [PACIENTES] Erro SQL:', err.sql);
+      console.error('❌ [PACIENTES] Erro message:', err.message);
+      return res.status(500).json({ erro: err.message });
+    }
+    console.log('✅ [PACIENTES] Perfil atualizado com sucesso!');
+    console.log('✅ [PACIENTES] Resultado:', result);
     res.json({ ok: true });
   });
 };
@@ -58,6 +68,13 @@ exports.remove = (req, res) => {
     res.json({ ok: true });
   });
 };
+
+
+
+
+
+
+
 
 
 

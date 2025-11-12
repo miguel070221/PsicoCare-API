@@ -45,6 +45,8 @@ exports.me = (req, res) => {
       especializacoes: JSON.parse(r.especializacoes || '[]'),
       bio: r.bio,
       foto_perfil: r.foto_perfil,
+      telefone: r.telefone || null,
+      redes_sociais: r.redes_sociais ? JSON.parse(r.redes_sociais) : {},
       disponivel: !!r.disponivel,
       perfil_completo: !!r.perfil_completo,
     });
@@ -108,6 +110,8 @@ exports.listPublic = (req, res) => {
         ? r.nome
         : (r.nome_completo || r.nomeCompleto || (r.email ? String(r.email).split('@')[0] : `Psicólogo #${r.id}`)),
       especializacoes: JSON.parse(r.especializacoes || '[]'),
+      telefone: r.telefone || null,
+      redes_sociais: r.redes_sociais ? JSON.parse(r.redes_sociais) : {},
       vinculado: !!r.vinculado,
     }));
     console.log(`Retornando ${mapped.length} psicólogos (pacienteId: ${pacienteIdFinal}, apenasVinculados: ${apenasVinculadosFinal})`);
@@ -186,6 +190,8 @@ exports.listVinculadosPorAtendimentos = (req, res) => {
         ? r.nome
         : (r.nome_completo || r.nomeCompleto || (r.email ? String(r.email).split('@')[0] : `Psicólogo #${r.id}`)),
       especializacoes: JSON.parse(r.especializacoes || '[]'),
+      telefone: r.telefone || null,
+      redes_sociais: r.redes_sociais ? JSON.parse(r.redes_sociais) : {},
       vinculado: true, // Sempre true pois vem de atendimentos
     }));
     console.log(`Retornando ${mapped.length} psicólogos vinculados`);

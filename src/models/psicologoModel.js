@@ -1,28 +1,46 @@
 const db = require('../config/db');
 
 exports.create = (psicologo, cb) => {
-  const { nome, email, senha, crp, especializacoes, bio, foto_perfil, disponivel, perfil_completo, aprovado } = psicologo;
-  const sql = `INSERT INTO psicologos (nome, email, senha, crp, especializacoes, bio, foto_perfil, disponivel, perfil_completo, aprovado)
-              VALUES (?,?,?,?,?,?,?,?,?,?)`;
-  db.query(sql, [nome, email, senha, crp, JSON.stringify(especializacoes || []), bio, foto_perfil, !!disponivel, !!perfil_completo, aprovado ?? 1], cb);
+  const { nome, email, senha, crp, especializacoes, bio, foto_perfil, telefone, redes_sociais, disponivel, perfil_completo, aprovado } = psicologo;
+  const sql = `INSERT INTO psicologos (nome, email, senha, crp, especializacoes, bio, foto_perfil, telefone, redes_sociais, disponivel, perfil_completo, aprovado)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`;
+  db.query(sql, [
+    nome, email, senha, crp, 
+    JSON.stringify(especializacoes || []), 
+    bio, foto_perfil, telefone || null,
+    redes_sociais ? JSON.stringify(redes_sociais) : null,
+    !!disponivel, !!perfil_completo, aprovado ?? 1
+  ], cb);
 };
 
 exports.update = (id, dados, cb) => {
   // Atualiza somente campos enviados para evitar sobrescrever com NULL/undefined
-  const allowed = ['nome', 'crp', 'especializacoes', 'bio', 'foto_perfil', 'disponivel', 'perfil_completo', 'aprovado'];
+  const allowed = ['nome', 'email', 'crp', 'especializacoes', 'bio', 'foto_perfil', 'telefone', 'redes_sociais', 'disponivel', 'perfil_completo', 'aprovado'];
   const sets = [];
   const params = [];
   for (const key of allowed) {
     if (dados[key] !== undefined) {
-      if (key === 'especializacoes') {
-        sets.push('especializacoes=?');
-        params.push(JSON.stringify(dados[key] || []));
-      } else if (key === 'disponivel' || key === 'perfil_completo') {
+      if (key === 'especializacoes' || key === 'redes_sociais') {
         sets.push(`${key}=?`);
-        params.push(!!dados[key]);
+        if (key === 'redes_sociais') {
+          // Se redes_sociais está vazio ou é um objeto vazio, salva como null
+          const redes = dados[key];
+          if (!redes || (typeof redes === 'object' && Object.keys(redes).length === 0)) {
+            params.push(null);
+          } else {
+            params.push(JSON.stringify(redes));
+          }
+        } else {
+          params.push(JSON.stringify(dados[key] || []));
+        }
+      } else if (key === 'disponivel' || key === 'perfil_completo' || key === 'aprovado') {
+        sets.push(`${key}=?`);
+        params.push(dados[key] === true || dados[key] === 1 ? 1 : 0);
       } else {
         sets.push(`${key}=?`);
-        params.push(dados[key]);
+        // Se o valor for string vazia, converte para null
+        const valor = dados[key];
+        params.push(valor === '' || valor === undefined ? null : valor);
       }
     }
   }
@@ -36,6 +54,7 @@ exports.listPublic = (filtros, cb) => {
   const { especializacao, faixa, pacienteId, apenasVinculados } = filtros || {};
   // Lista todos os psicólogos aprovados OU psicólogos vinculados ao paciente (se fornecido)
   let sql = `SELECT DISTINCT p.id, p.nome, p.crp, p.especializacoes, p.bio, p.foto_perfil, 
+                    p.telefone, p.redes_sociais,
                     p.disponivel, p.perfil_completo, p.aprovado,
                     CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS vinculado
              FROM psicologos p`;
@@ -133,6 +152,7 @@ exports.listByAtendimentos = (id_paciente, cb) => {
       // Agora executa a query principal - busca psicólogos vinculados via atendimentos ativos
       // A condição de status deve estar no JOIN para garantir que apenas atendimentos ativos sejam considerados
       const sql = `SELECT DISTINCT p.id, p.nome, p.crp, p.especializacoes, p.bio, p.foto_perfil, 
+                          p.telefone, p.redes_sociais,
                           p.disponivel, p.perfil_completo, p.aprovado,
                           1 AS vinculado
                    FROM psicologos p

@@ -2,9 +2,21 @@ const db = require('../config/db');
 
 exports.create = (nota, cb) => {
   const { id_psicologo, id_paciente, titulo, conteudo, data_sessao, id_agendamento } = nota;
+  
   const sql = `INSERT INTO notas_sessoes (id_psicologo, id_paciente, titulo, conteudo, data_sessao, id_agendamento)
                VALUES (?, ?, ?, ?, ?, ?)`;
-  db.query(sql, [id_psicologo, id_paciente, titulo, conteudo, data_sessao || null, id_agendamento || null], cb);
+  
+  const params = [id_psicologo, id_paciente, titulo, conteudo, data_sessao || null, id_agendamento || null];
+  
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      if (err.code === 'ER_NO_SUCH_TABLE' || err.errno === 1146) {
+        console.error('❌ [NOTAS] Tabela notas_sessoes não existe. Execute o schema.sql');
+      }
+      return cb(err);
+    }
+    cb(null, result);
+  });
 };
 
 exports.listByPsicologo = (id_psicologo, cb) => {
@@ -61,6 +73,8 @@ exports.remove = (id, id_psicologo, cb) => {
   const sql = 'DELETE FROM notas_sessoes WHERE id = ? AND id_psicologo = ?';
   db.query(sql, [id, id_psicologo], cb);
 };
+
+
 
 
 

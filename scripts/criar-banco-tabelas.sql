@@ -1,5 +1,12 @@
+-- ============================================
+-- Script para criar o banco psicocare e todas as tabelas
+-- Execute no phpMyAdmin ou MySQL
+-- ============================================
+
 -- Criar banco (se ainda não existir)
 CREATE DATABASE IF NOT EXISTS psicocare CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Usar o banco
 USE psicocare;
 
 -- Tabela de pacientes
@@ -27,11 +34,9 @@ CREATE TABLE IF NOT EXISTS psicologos (
   email VARCHAR(160) NOT NULL UNIQUE,
   senha VARCHAR(200) NOT NULL,
   crp VARCHAR(50),
-  especializacoes TEXT, -- JSON de strings
+  especializacoes TEXT,
   bio TEXT,
   foto_perfil VARCHAR(255),
-  telefone VARCHAR(20) DEFAULT NULL,
-  redes_sociais TEXT DEFAULT NULL COMMENT 'JSON com links de redes sociais: {"instagram": "...", "linkedin": "...", "facebook": "...", "outros": [...]}',
   disponivel TINYINT(1) DEFAULT 0,
   perfil_completo TINYINT(1) DEFAULT 0,
   aprovado TINYINT(1) DEFAULT 1,
@@ -71,11 +76,7 @@ CREATE TABLE IF NOT EXISTS atendimentos (
   CONSTRAINT fk_atend_psicologo FOREIGN KEY (id_psicologo) REFERENCES psicologos(id) ON DELETE CASCADE
 );
 
--- Índices auxiliares
--- Nota: Se o índice já existir, use DROP INDEX antes ou ignore o erro
-CREATE INDEX idx_psicologos_disponiveis ON psicologos (disponivel, perfil_completo, aprovado);
-
--- Tabela de agendamentos (caso ainda não exista)
+-- Tabela de agendamentos
 CREATE TABLE IF NOT EXISTS agendamentos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
@@ -87,7 +88,7 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   CONSTRAINT fk_agend_prof FOREIGN KEY (profissional_id) REFERENCES psicologos(id) ON DELETE CASCADE
 );
 
--- Tabela de acompanhamentos (autoavaliações do paciente)
+-- Tabela de acompanhamentos
 CREATE TABLE IF NOT EXISTS acompanhamentos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   id_usuario INT NOT NULL,
@@ -98,7 +99,7 @@ CREATE TABLE IF NOT EXISTS acompanhamentos (
   CONSTRAINT fk_acomp_usuario FOREIGN KEY (id_usuario) REFERENCES pacientes(id) ON DELETE CASCADE
 );
 
--- Tabela de notas/sessões (anotações do psicólogo sobre sessões)
+-- Tabela de notas/sessões
 CREATE TABLE IF NOT EXISTS notas_sessoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   id_psicologo INT NOT NULL,
@@ -114,14 +115,14 @@ CREATE TABLE IF NOT EXISTS notas_sessoes (
   CONSTRAINT fk_nota_agendamento FOREIGN KEY (id_agendamento) REFERENCES agendamentos(id) ON DELETE SET NULL
 );
 
--- Tabela de horários disponíveis do psicólogo
+-- Tabela de horários disponíveis
 CREATE TABLE IF NOT EXISTS horarios_disponiveis (
   id INT AUTO_INCREMENT PRIMARY KEY,
   id_psicologo INT NOT NULL,
   dia_semana TINYINT NOT NULL COMMENT '0=Domingo, 1=Segunda, ..., 6=Sábado',
-  hora_inicio TIME NOT NULL COMMENT 'Horário de início (ex: 09:00)',
-  hora_fim TIME NOT NULL COMMENT 'Horário de fim (ex: 18:00)',
-  duracao_minutos INT DEFAULT 60 COMMENT 'Duração de cada consulta em minutos',
+  hora_inicio TIME NOT NULL,
+  hora_fim TIME NOT NULL,
+  duracao_minutos INT DEFAULT 60,
   ativo TINYINT(1) DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -143,12 +144,10 @@ CREATE TABLE IF NOT EXISTS avaliacoes (
   CONSTRAINT fk_avaliacao_agendamento FOREIGN KEY (id_agendamento) REFERENCES agendamentos(id) ON DELETE SET NULL
 );
 
+-- Índices auxiliares (opcional - para melhor performance)
+-- Se o índice já existir, você pode ignorar o erro ou executar apenas se não existir
+-- CREATE INDEX idx_psicologos_disponiveis ON psicologos (disponivel, perfil_completo, aprovado);
 
-
-
-
-
-
-
-
+-- Mensagem de sucesso
+SELECT 'Banco de dados psicocare criado com sucesso! Todas as tabelas foram criadas.' AS mensagem;
 
