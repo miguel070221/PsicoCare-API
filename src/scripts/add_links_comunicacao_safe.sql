@@ -75,3 +75,5 @@ SELECT 'Script executado com sucesso! Verifique se as colunas foram adicionadas.
 
 
 
+
+

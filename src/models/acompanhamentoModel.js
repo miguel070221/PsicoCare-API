@@ -10,6 +10,18 @@ const Acompanhamento = {
     const sql = `SELECT * FROM acompanhamentos WHERE id_usuario = ? ORDER BY data_hora DESC`;
     db.query(sql, [id_usuario], callback);
   },
+  getById: (id, callback) => {
+    const sql = `SELECT * FROM acompanhamentos WHERE id = ?`;
+    db.query(sql, [id], callback);
+  },
+  update: (id, dados, callback) => {
+    const sql = `UPDATE acompanhamentos SET texto = ?, qualidade_sono = ?, humor = ? WHERE id = ?`;
+    db.query(sql, [dados.texto, dados.qualidade_sono, dados.humor, id], callback);
+  },
+  delete: (id, callback) => {
+    const sql = `DELETE FROM acompanhamentos WHERE id = ?`;
+    db.query(sql, [id], callback);
+  },
 };
 
 module.exports = Acompanhamento;

@@ -42,3 +42,5 @@ SELECT id, nome, email, data_criacao FROM administradores WHERE email = 'admin@p
 
 
 
+
+

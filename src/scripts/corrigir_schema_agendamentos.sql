@@ -71,3 +71,5 @@ SELECT COUNT(*) as total FROM avaliacoes WHERE id_agendamento IS NOT NULL;
 
 
 
+
+

@@ -14,4 +14,10 @@ router.get('/', auth, authorize(['paciente']), acompanhamentoController.listarAc
 // Psicólogo: listar acompanhamentos de um paciente vinculado
 router.get('/paciente/:id', auth, authorize(['psicologo']), acompanhamentoController.listarPorPacienteComAutorizacao);
 
+// Atualizar acompanhamento (apenas pacientes)
+router.put('/:id', auth, authorize(['paciente']), acompanhamentoController.atualizarAcompanhamento);
+
+// Deletar acompanhamento (apenas pacientes)
+router.delete('/:id', auth, authorize(['paciente']), acompanhamentoController.deletarAcompanhamento);
+
 module.exports = router;

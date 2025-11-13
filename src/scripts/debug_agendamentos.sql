@@ -155,3 +155,5 @@ ORDER BY COALESCE(a.data_hora, CONCAT(a.data, ' ', a.horario)) DESC;
 
 
 
+
+
