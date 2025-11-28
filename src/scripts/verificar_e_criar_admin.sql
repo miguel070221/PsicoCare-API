@@ -43,3 +43,6 @@ SELECT id, nome, email, data_criacao FROM administradores;
 
 
 
+
+
+

@@ -42,3 +42,6 @@ SELECT COUNT(*) AS total_notas FROM notas_sessoes;
 
 
 
+
+
+

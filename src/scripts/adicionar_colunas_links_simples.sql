@@ -29,3 +29,6 @@ ALTER TABLE pacientes ADD COLUMN telefone VARCHAR(20) DEFAULT NULL;
 
 
 
+
+
+
